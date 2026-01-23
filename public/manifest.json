@@ -1,0 +1,33 @@
+{
+  "name": "Ventics AI",
+  "short_name": "Ventics AI",
+  "description": "Design and visualize interior spaces in seconds with AI",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FCFDF7",
+  "theme_color": "#000000",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/favicon-32.png",
+      "sizes": "32x32",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/images/logo-white.jpg",
+      "sizes": "192x192",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/images/logo-white.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["design", "productivity", "utilities"],
+  "lang": "en",
+  "dir": "ltr"
+}

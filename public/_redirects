@@ -1,0 +1,13 @@
+# AWS Amplify redirects and headers
+/favicon.ico    /favicon.ico    200
+/images/logo-white.png    /images/logo-white.png    200
+
+# Cache headers for static assets
+/images/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/favicon.ico
+  Cache-Control: public, max-age=86400
+
+/manifest.json
+  Cache-Control: public, max-age=86400
