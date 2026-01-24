@@ -1,5 +1,6 @@
 import { GenerateDesignDto } from "@/interface/design";
 import { axiosBaseInstance, baseURL } from "@/lib/axiosBaseInstanse";
+import { handleApiError } from "@/lib/errorHandler";
 import axios from "axios";
 
 export async function generateDesigns(data: GenerateDesignDto) {
@@ -27,6 +28,7 @@ export async function generateDesigns(data: GenerateDesignDto) {
     );
     return response.data;
   } catch (error) {
+    handleApiError(error);
     throw error;
   }
 }
@@ -46,6 +48,7 @@ export async function downloadDesigns(
 
     return response.data;
   } catch (error) {
+    handleApiError(error, { showToast: false }); // Don't show toast for download errors
     throw error;
   }
 }
@@ -53,9 +56,9 @@ export async function downloadDesigns(
 export async function fetchDesign(generationId: string) {
   try {
     const response = await axios.get(`${baseURL}/generations/${generationId}`);
-
     return response.data;
   } catch (error) {
+    handleApiError(error);
     throw error;
   }
 }

@@ -1,16 +1,19 @@
 import { axiosBaseInstance } from "@/lib/axiosBaseInstanse";
+import { handleApiError } from "@/lib/errorHandler";
 
 export async function subscribeToPlan(planId: string) {
   try {
     const response = await axiosBaseInstance.post("/payments/subscribe", {
-        plan: planId,
-        callback_url: "http://localhost:3000/pricing"
+      plan: planId,
+      callback_url: window.location.origin + "/pricing", // Use dynamic origin
     });
     return response.data;
   } catch (error) {
+    handleApiError(error);
     throw error;
   }
 }
+
 
 
 export const getSubscriptionsPlans = async () => {
@@ -18,9 +21,11 @@ export const getSubscriptionsPlans = async () => {
     const response = await axiosBaseInstance.get("/plans");
     return response.data;
   } catch (error) {
+    handleApiError(error);
     throw error;
   }
-}
+};
+
 
 
 export const verifyPayment = async (reference: string) => {
@@ -28,18 +33,19 @@ export const verifyPayment = async (reference: string) => {
     const response = await axiosBaseInstance.get(`/payments/verify/${reference}`);
     return response.data;
   } catch (error) {
+    handleApiError(error);
     throw error;
   }
 };
 
 
+
 export const getActiveSubscription = async () => {
   try {
-    const response = await axiosBaseInstance.get(
-      `/subscriptions/active`
-    );
+    const response = await axiosBaseInstance.get(`/subscriptions/active`);
     return response.data;
   } catch (error) {
+    handleApiError(error);
     throw error;
   }
 };

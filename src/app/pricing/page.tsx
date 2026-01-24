@@ -108,21 +108,19 @@ const Pricing = () => {
         >
           <button
             onClick={() => setBillingCycle("monthly")}
-            className={`px-6 py-2 rounded-md text-sm font-medium transition-colors ${
-              billingCycle === "monthly"
-                ? "bg-white text-black shadow-sm"
-                : "text-gray-600 hover:text-black"
-            }`}
+            className={`px-6 py-2 rounded-md text-sm font-medium transition-colors ${billingCycle === "monthly"
+              ? "bg-white text-black shadow-sm"
+              : "text-gray-600 hover:text-black"
+              }`}
           >
             Monthly billing
           </button>
           <button
             onClick={() => setBillingCycle("annual")}
-            className={`px-6 py-2 rounded-md text-sm font-medium transition-colors ${
-              billingCycle === "annual"
-                ? "bg-white text-black shadow-sm"
-                : "text-gray-600 hover:text-black"
-            }`}
+            className={`px-6 py-2 rounded-md text-sm font-medium transition-colors ${billingCycle === "annual"
+              ? "bg-white text-black shadow-sm"
+              : "text-gray-600 hover:text-black"
+              }`}
           >
             Annual billing
           </button>
@@ -131,7 +129,7 @@ const Pricing = () => {
 
       {/* Pricing Cards */}
       <div className="max-w-7xl mx-auto px-6 pb-16">
-        <div className="grid md:grid-cols-3 gap-6">
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
           {isLoading ? (
             // Loading skeletons
             <>
@@ -164,27 +162,25 @@ const Pricing = () => {
               </button>
             </div>
           ) : (
-            // Render plans from API
-            plans
-              .slice(0, 3)
-              ?.map((plan: PlanInterface) => (
-                <PricingCard
-                  key={plan.plan}
-                  id={plan.plan}
-                  title={`${plan.plan}`}
-                  description={plan.description}
-                  price={plan.price}
-                  features={generateFeatures(plan.credits)}
-                  buttonText="Get started"
-                  popular={plan.popular}
-                />
-              ))
+            // Render all plans from API
+            plans?.map((plan: PlanInterface) => (
+              <PricingCard
+                key={plan.plan}
+                id={plan.plan}
+                title={`${plan.plan}`}
+                description={plan.description}
+                price={plan.price}
+                features={generateFeatures(plan.credits)}
+                buttonText="Get started"
+                popular={plan.popular}
+              />
+            ))
           )}
         </div>
       </div>
 
-      {/* Pay What You Want Section */}
-      <div className="bg-black py-16 hidden">
+      {/* Individual Credit Purchase Section */}
+      <div className="bg-black py-16">
         <div className="max-w-6xl mx-auto px-6">
           <div className="bg-gradient-to-r from-gray-900 to-black rounded-2xl p-8 md:p-12 flex flex-col md:flex-row items-center justify-between gap-8">
             {/* Left Content */}
@@ -196,38 +192,35 @@ const Pricing = () => {
                     fill="currentColor"
                     viewBox="0 0 20 20"
                   >
-                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                    <path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.305 2.305 0 01-.567-.267C8.07 8.34 8 8.114 8 8c0-.114.07-.34.433-.582zM11 12.849v-1.698c.22.071.412.164.567.267.364.243.433.468.433.582 0 .114-.07.34-.433.582a2.305 2.305 0 01-.567.267z" />
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.535 4.535 0 00-1.676.662C6.602 6.234 6 7.009 6 8c0 .99.602 1.765 1.324 2.246.48.32 1.054.545 1.676.662v1.941c-.391-.127-.68-.317-.843-.504a1 1 0 10-1.51 1.31c.562.649 1.413 1.076 2.353 1.253V15a1 1 0 102 0v-.092a4.535 4.535 0 001.676-.662C13.398 13.766 14 12.991 14 12c0-.99-.602-1.765-1.324-2.246A4.535 4.535 0 0011 9.092V7.151c.391.127.68.317.843.504a1 1 0 101.511-1.31c-.563-.649-1.413-1.076-2.354-1.253V5z" clipRule="evenodd" />
                   </svg>
                 </div>
-                <h3 className="text-2xl font-bold text-white">Ultimate</h3>
+                <h3 className="text-2xl font-bold text-white">Individual</h3>
               </div>
 
               <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
-                The all-in-one solution for <br />
-                <span className="text-yellow-400">
-                  lifetime access to unlimited
-                </span>{" "}
-                <br />
-                credits.
+                Purchase a flexible amount of <br />
+                credits for your needs
               </h2>
 
               <ul className="space-y-3 text-white">
                 <li className="flex items-center gap-3">
                   <FiCheck className="w-5 h-5 text-green-400" />
-                  <span>Unlimited credits</span>
+                  <span>₦100 per credit</span>
                 </li>
                 <li className="flex items-center gap-3">
                   <FiCheck className="w-5 h-5 text-green-400" />
-                  <span>Includes all features</span>
+                  <span>No subscription required</span>
                 </li>
                 <li className="flex items-center gap-3">
                   <FiCheck className="w-5 h-5 text-green-400" />
-                  <span>Lifetime updates & support</span>
+                  <span>Credits never expire</span>
                 </li>
                 <li className="flex items-center gap-3">
-                  <FiCheck className="w-5 h-5 text-yellow-400" />
-                  <span className="text-yellow-400 font-medium">
-                    Pay what you want guarantee
+                  <FiCheck className="w-5 h-5 text-green-400" />
+                  <span className="font-medium">
+                    Buy exactly what you need
                   </span>
                 </li>
               </ul>
@@ -236,11 +229,11 @@ const Pricing = () => {
             {/* Right Content - Pricing Card */}
             <div className="bg-gray-800 rounded-xl p-6 min-w-[300px]">
               <div className="flex items-center justify-between mb-4">
-                <span className="bg-purple-600 text-white px-3 py-1 rounded-full text-sm font-medium">
-                  PAY WHAT YOU WANT
+                <span className="bg-white text-black px-3 py-1 rounded-full text-sm font-medium">
+                  FLEXIBLE
                 </span>
-                <span className="text-gray-400 line-through text-sm">
-                  ₦599.00
+                <span className="text-gray-400 text-sm">
+                  ₦100/credit
                 </span>
               </div>
 
@@ -249,22 +242,23 @@ const Pricing = () => {
                   <span className="text-4xl font-bold text-white">₦</span>
                   <input
                     type="number"
-                    placeholder="299.5"
+                    placeholder="1000"
                     className="text-4xl font-bold bg-transparent text-white border-none outline-none w-32"
-                    min="1"
+                    min="100"
+                    step="100"
                   />
-                  <span className="text-gray-400">/lifetime</span>
                 </div>
-                <span className="text-gray-400 text-sm">(USD $)</span>
+                <span className="text-gray-400 text-sm">Enter amount (minimum ₦100)</span>
               </div>
 
               <div className="text-sm text-gray-400 mb-6">
-                <p>• Credits equivalent to amount paid</p>
-                <p>• Minimum ₦100 for activation</p>
+                <p>• ₦100 = 1 credit</p>
+                <p>• Minimum purchase: ₦100 (1 credit)</p>
+                <p>• Credits never expire</p>
               </div>
 
-              <button className="w-full bg-purple-600 hover:bg-purple-700 text-white font-medium py-3 px-4 rounded-lg transition-colors">
-                Get Ultimate
+              <button className="w-full bg-white hover:bg-gray-100 text-black font-medium py-3 px-4 rounded-lg transition-colors">
+                Purchase Credits
               </button>
             </div>
           </div>

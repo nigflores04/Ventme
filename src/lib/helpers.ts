@@ -4,8 +4,32 @@ import { twMerge } from "tailwind-merge";
 import { downloadDesigns } from "@/api/design";
 import toast from "react-hot-toast";
 
-export const getToken = () => {
+/**
+ * Get authentication token from cookies
+ */
+export const getToken = (): string | undefined => {
   return Cookies.get("token");
+};
+
+/**
+ * Set authentication token in cookies
+ * @param token - JWT access token
+ * @param expiresAt - Optional expiration date
+ */
+export const setToken = (token: string, expiresAt?: string | Date): void => {
+  const options: Cookies.CookieAttributes = {
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+  };
+
+  if (expiresAt) {
+    options.expires = typeof expiresAt === "string" ? new Date(expiresAt) : expiresAt;
+  } else {
+    // Default to 7 days if no expiration provided
+    options.expires = 7;
+  }
+
+  Cookies.set("token", token, options);
 };
 
 export function cn(...inputs: ClassValue[]) {
@@ -86,15 +110,35 @@ export const logOut = () => {
   window.location.href = "/";
 };
 
+/**
+ * Check if JWT token is expired
+ * @param token - JWT token string
+ * @returns true if token is expired or invalid
+ */
 export const isTokenExpired = (token: string): boolean => {
   try {
-    const payload = JSON.parse(atob(token.split(".")[1]));
-    const currentTime = Math.floor(Date.now() / 1000);
+    if (!token || token.split(".").length !== 3) {
+      console.warn("Invalid token format");
+      return true;
+    }
 
-    // Check if token has expired (exp is in seconds)
-    return payload.exp < currentTime;
+    const payload = JSON.parse(atob(token.split(".")[1]));
+
+    if (!payload.exp) {
+      console.warn("Token missing expiration");
+      return true;
+    }
+
+    const currentTime = Math.floor(Date.now() / 1000);
+    const isExpired = payload.exp < currentTime;
+
+    if (isExpired) {
+      console.log("Token has expired");
+    }
+
+    return isExpired;
   } catch (error) {
-    console.error("Token expired error:", error);
+    console.error("Error checking token expiration:", error);
     return true;
   }
 };

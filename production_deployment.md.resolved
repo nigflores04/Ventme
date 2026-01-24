@@ -1,0 +1,447 @@
+# Production Deployment Guide - Ventics AI
+
+## 🚀 Business-Grade Deployment Checklist
+
+This guide ensures your Ventics AI platform is production-ready, secure, and scalable for enterprise use.
+
+---
+
+## 📋 Pre-Deployment Checklist
+
+### ✅ **1. Security Configuration**
+
+#### Backend Security
+- [ ] **Change JWT_SECRET_KEY** - Generate strong 64+ character secret
+  ```bash
+  # Generate secure secret
+  python -c "import secrets; print(secrets.token_urlsafe(64))"
+  ```
+- [ ] **Set PAYSTACK_WEBHOOK_SECRET** - Required for payment verification
+- [ ] **Update ALLOWED_ORIGINS** - Add production domain(s)
+- [ ] **Enable EMAIL_VERIFICATION** - Set `REQUIRE_EMAIL_VERIFICATION=true`
+- [ ] **Rotate API Keys** - All third-party service keys (Stability AI, OpenAI, Gemini, etc.)
+- [ ] **Database Credentials** - Use strong passwords, not defaults
+- [ ] **Redis Password** - Secure Redis instance
+
+#### Frontend Security
+- [ ] **Environment Variables** - Never commit [.env.local](file:///c:/Users/Main/Downloads/ventics-ai-website-master/.env.local) to git
+- [ ] **API Keys** - Only use `NEXT_PUBLIC_*` for client-safe values
+- [ ] **Google OAuth** - Configure production redirect URIs
+- [ ] **Remove Debug Logs** - Clean up console.log statements
+
+---
+
+### ✅ **2. Environment Configuration**
+
+#### Backend [.env](file:///c:/Users/Main/Downloads/ventics-ai-api-master/.env) (Production)
+```bash
+# Application
+ENVIRONMENT=production
+APP_NAME=Ventics AI API
+VERSION=1.0.0
+
+# Security
+JWT_SECRET_KEY=<GENERATE_64_CHAR_SECRET>
+JWT_ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=60
+REQUIRE_EMAIL_VERIFICATION=true
+
+# CORS - Add your production domain
+ALLOWED_ORIGINS=https://yourdomain.com,https://www.yourdomain.com
+
+# Database
+DATABASE_URL=postgresql://user:password@host:5432/ventics_ai_prod
+DIRECT_URL=postgresql://user:password@host:5432/ventics_ai_prod
+
+# Paystack (Production Keys)
+PAYSTACK_SECRET_KEY=sk_live_YOUR_LIVE_SECRET_KEY
+PAYSTACK_PUBLIC_KEY=pk_live_YOUR_LIVE_PUBLIC_KEY
+PAYSTACK_WEBHOOK_SECRET=<YOUR_WEBHOOK_SECRET>
+
+# Email Service (Choose one)
+# Option 1: SMTP
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USERNAME=your-email@gmail.com
+SMTP_PASSWORD=your-app-password
+SMTP_FROM_EMAIL=noreply@yourdomain.com
+
+# Option 2: Mailgun (Recommended for production)
+MAILGUN_API_KEY=<YOUR_MAILGUN_KEY>
+MAILGUN_DOMAIN=mg.yourdomain.com
+MAILGUN_FROM_EMAIL=noreply@yourdomain.com
+
+# AI Services
+STABILITY_API_KEY=<YOUR_KEY>
+OPENAI_API_KEY=<YOUR_KEY>
+GEMINI_API_KEY=<YOUR_KEY>
+REPLICATE_API_TOKEN=<YOUR_KEY>
+
+# Storage (S3)
+S3_BUCKET=ventics-ai-production
+S3_REGION=us-east-1
+S3_ACCESS_KEY_ID=<YOUR_KEY>
+S3_SECRET_ACCESS_KEY=<YOUR_SECRET>
+CLOUDFRONT_DOMAIN=cdn.yourdomain.com
+
+# Redis (Production)
+REDIS_HOST=your-redis-host.com
+REDIS_PASSWORD=<STRONG_PASSWORD>
+REDIS_PORT=6379
+
+# Rate Limiting
+RATE_LIMIT_ENABLED=true
+```
+
+#### Frontend [.env.local](file:///c:/Users/Main/Downloads/ventics-ai-website-master/.env.local) (Production)
+```bash
+NEXT_PUBLIC_BASE_API_URL=https://api.yourdomain.com/v1
+NEXT_PUBLIC_GOOGLE_CLIENT_ID=<YOUR_PRODUCTION_CLIENT_ID>
+NEXT_PUBLIC_ENVIRONMENT=production
+
+# Analytics (Optional)
+NEXT_PUBLIC_FB_PIXEL_ID=<YOUR_PIXEL_ID>
+NEXT_PUBLIC_FB_ACCESS_TOKEN=<YOUR_TOKEN>
+```
+
+---
+
+### ✅ **3. Database Setup**
+
+#### Run Migrations
+```bash
+cd ventics-ai-api-master
+
+# Generate Prisma client
+npx prisma generate
+
+# Run migrations
+npx prisma migrate deploy
+
+# Verify database
+npx prisma db push
+```
+
+#### Create Indexes (Performance)
+```sql
+-- Already in schema.prisma, but verify they exist:
+CREATE INDEX IF NOT EXISTS idx_user_email ON "User"(email);
+CREATE INDEX IF NOT EXISTS idx_generation_user ON "Generation"(user_id);
+CREATE INDEX IF NOT EXISTS idx_project_user ON "Project"(user_id);
+```
+
+#### Backup Strategy
+- [ ] Set up automated daily backups
+- [ ] Test restore procedure
+- [ ] Store backups in separate location
+
+---
+
+### ✅ **4. Payment Integration**
+
+#### Paystack Production Setup
+1. **Switch to Live Keys**
+   - Get live keys from Paystack Dashboard
+   - Update `PAYSTACK_SECRET_KEY` and `PAYSTACK_PUBLIC_KEY`
+
+2. **Configure Webhooks**
+   ```
+   Webhook URL: https://api.yourdomain.com/v1/payments/webhook
+   Events to subscribe:
+   - charge.success
+   - subscription.create
+   - subscription.disable
+   ```
+
+3. **Test Payments**
+   - [ ] Test successful payment
+   - [ ] Test failed payment
+   - [ ] Test webhook delivery
+   - [ ] Verify credit allocation
+
+---
+
+### ✅ **5. Deployment Steps**
+
+#### Backend Deployment (Recommended: Railway/Render/DigitalOcean)
+
+**Option A: Railway**
+```bash
+# Install Railway CLI
+npm install -g @railway/cli
+
+# Login
+railway login
+
+# Initialize project
+railway init
+
+# Add environment variables
+railway variables set JWT_SECRET_KEY=<your-secret>
+# ... add all other variables
+
+# Deploy
+railway up
+```
+
+**Option B: Docker**
+```dockerfile
+# Create Dockerfile in ventics-ai-api-master/
+FROM python:3.12-slim
+
+WORKDIR /app
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY . .
+
+EXPOSE 8000
+
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+```
+
+```bash
+# Build and run
+docker build -t ventics-ai-api .
+docker run -p 8000:8000 --env-file .env ventics-ai-api
+```
+
+#### Frontend Deployment (Recommended: Vercel)
+
+```bash
+# Install Vercel CLI
+npm install -g vercel
+
+# Deploy
+cd ventics-ai-website-master
+vercel
+
+# Add environment variables in Vercel dashboard
+# Set production environment variables
+```
+
+---
+
+### ✅ **6. Domain & SSL**
+
+- [ ] **Purchase Domain** - yourdomain.com
+- [ ] **Configure DNS**
+  - `A` record: `@` → Backend IP
+  - `CNAME` record: `www` → yourdomain.com
+  - `CNAME` record: `api` → backend-host.com
+- [ ] **SSL Certificates** - Let's Encrypt (automatic with Vercel/Railway)
+- [ ] **Update CORS** - Add production domains to `ALLOWED_ORIGINS`
+
+---
+
+### ✅ **7. Monitoring & Logging**
+
+#### Error Tracking
+```bash
+# Install Sentry (Recommended)
+pip install sentry-sdk
+
+# Add to app/main.py
+import sentry_sdk
+sentry_sdk.init(
+    dsn="<YOUR_SENTRY_DSN>",
+    environment="production",
+    traces_sample_rate=1.0,
+)
+```
+
+#### Application Monitoring
+- [ ] Set up **Uptime Monitoring** (UptimeRobot, Pingdom)
+- [ ] Configure **Log Aggregation** (Papertrail, Loggly)
+- [ ] Set up **Performance Monitoring** (New Relic, DataDog)
+
+#### Health Checks
+```python
+# Already implemented in app/main.py
+GET /health - Returns 200 if healthy
+```
+
+---
+
+### ✅ **8. Performance Optimization**
+
+#### Backend
+- [ ] Enable **Redis caching** for frequently accessed data
+- [ ] Configure **Database connection pooling**
+- [ ] Set up **CDN** for static assets (CloudFront)
+- [ ] Enable **Gzip compression**
+
+#### Frontend
+- [ ] Run production build: `pnpm build`
+- [ ] Enable **Image Optimization** (Next.js automatic)
+- [ ] Configure **CDN** (Vercel automatic)
+- [ ] Set up **Analytics** (Google Analytics, Plausible)
+
+---
+
+### ✅ **9. Testing**
+
+#### Pre-Launch Testing
+- [ ] **Authentication Flow**
+  - Sign up with email
+  - Email verification
+  - Login/Logout
+  - Google OAuth
+  - Password reset
+
+- [ ] **Payment Flow**
+  - Subscribe to each plan
+  - Verify credit allocation
+  - Test webhook delivery
+  - Individual credit purchase
+
+- [ ] **Generation Flow**
+  - Upload image
+  - Generate designs
+  - Download results
+  - Check credit deduction
+
+- [ ] **Error Handling**
+  - Invalid inputs
+  - Network errors
+  - Rate limiting
+  - Server errors
+
+#### Load Testing
+```bash
+# Install locust
+pip install locust
+
+# Run load test
+locust -f load_test.py --host=https://api.yourdomain.com
+```
+
+---
+
+### ✅ **10. Legal & Compliance**
+
+- [ ] **Privacy Policy** - GDPR compliant
+- [ ] **Terms of Service** - Clear usage terms
+- [ ] **Cookie Policy** - If using cookies
+- [ ] **Data Retention Policy** - How long you keep user data
+- [ ] **Payment Terms** - Refund policy, subscription terms
+
+---
+
+### ✅ **11. Business Operations**
+
+#### Customer Support
+- [ ] Set up **Support Email** (support@yourdomain.com)
+- [ ] Create **FAQ Page**
+- [ ] Set up **Help Center** (Intercom, Zendesk)
+- [ ] Configure **Priority Support** for Studio plan users
+
+#### Analytics & Metrics
+- [ ] **User Acquisition** - Track signups, conversions
+- [ ] **Revenue Metrics** - MRR, churn rate
+- [ ] **Usage Metrics** - Generations per user, popular features
+- [ ] **Performance Metrics** - API response times, error rates
+
+#### Marketing
+- [ ] **Email Marketing** - Welcome emails, newsletters
+- [ ] **Social Media** - Twitter, LinkedIn presence
+- [ ] **SEO Optimization** - Meta tags, sitemap
+- [ ] **Content Marketing** - Blog, case studies
+
+---
+
+## 🔒 Security Best Practices
+
+### Critical Security Measures
+1. **Never commit secrets** - Use [.gitignore](file:///c:/Users/Main/Downloads/ventics-ai-api-master/.gitignore) for [.env](file:///c:/Users/Main/Downloads/ventics-ai-api-master/.env) files
+2. **Rotate credentials** - Change all default passwords
+3. **Enable 2FA** - On all admin accounts
+4. **Regular updates** - Keep dependencies updated
+5. **Security audits** - Regular penetration testing
+6. **Rate limiting** - Already implemented, verify it's enabled
+7. **Input validation** - Already implemented via Pydantic
+8. **SQL injection protection** - Prisma ORM handles this
+9. **XSS protection** - Next.js handles this
+10. **HTTPS only** - Enforce SSL in production
+
+---
+
+## 📊 Post-Launch Monitoring
+
+### Week 1
+- [ ] Monitor error rates daily
+- [ ] Check payment success rates
+- [ ] Review user feedback
+- [ ] Monitor server resources (CPU, memory)
+
+### Month 1
+- [ ] Analyze user behavior
+- [ ] Identify bottlenecks
+- [ ] Optimize slow queries
+- [ ] Review and adjust pricing if needed
+
+### Ongoing
+- [ ] Monthly security updates
+- [ ] Quarterly feature releases
+- [ ] Regular backup testing
+- [ ] Performance optimization
+
+---
+
+## 🆘 Emergency Procedures
+
+### Database Failure
+1. Switch to read replica (if configured)
+2. Restore from latest backup
+3. Notify users of downtime
+
+### Payment System Failure
+1. Disable new subscriptions temporarily
+2. Contact Paystack support
+3. Manually process pending payments
+
+### Security Breach
+1. Immediately rotate all credentials
+2. Notify affected users
+3. Review audit logs
+4. Implement additional security measures
+
+---
+
+## 📞 Support Contacts
+
+- **Paystack Support**: support@paystack.com
+- **Vercel Support**: support@vercel.com
+- **Railway Support**: team@railway.app
+- **Database Provider**: [Your provider]
+
+---
+
+## ✅ Final Launch Checklist
+
+Before going live:
+- [ ] All environment variables set correctly
+- [ ] Database migrations completed
+- [ ] Payment integration tested with live keys
+- [ ] Domain and SSL configured
+- [ ] Monitoring and error tracking active
+- [ ] Backup system verified
+- [ ] Legal pages published
+- [ ] Support channels ready
+- [ ] Marketing materials prepared
+- [ ] Team trained on operations
+
+---
+
+## 🎉 You're Ready to Launch!
+
+Once all items are checked, your Ventics AI platform is production-ready and business-grade!
+
+**Remember:**
+- Start small, scale gradually
+- Monitor everything
+- Listen to user feedback
+- Iterate and improve continuously
+
+Good luck with your launch! 🚀
