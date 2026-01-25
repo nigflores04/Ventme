@@ -1,11 +1,11 @@
 "use client";
 import { useEffect, useState } from "react";
-import { getSubscriptionsPlans, verifyPayment } from "@/api/subscriptions";
+import { getSubscriptionsPlans, verifyPayment, getIndividualPlan } from "@/api/subscriptions";
 import { Header } from "@/components/Header";
 import PricingCard from "@/components/PricingCard";
 import { useQuery } from "@tanstack/react-query";
 import { FiCheck } from "react-icons/fi";
-import { PlanInterface } from "@/interface/plans";
+import { PlanInterface, IndividualPlanInterface } from "@/interface/plans";
 import { Skeleton } from "@mantine/core";
 import { useRouter, useSearchParams } from "next/navigation";
 import toast from "react-hot-toast";
@@ -35,6 +35,14 @@ const Pricing = () => {
     queryFn: () => getSubscriptionsPlans(),
   });
 
+  const {
+    data: individualPlan,
+    isLoading: isIndividualLoading,
+  } = useQuery({
+    queryKey: ["individualPlan"],
+    queryFn: () => getIndividualPlan(),
+  });
+
   // const {
   //   mutate: mutateVerifyPayment,
   //   isPending: isVerifyPaymentLoading,
@@ -48,16 +56,6 @@ const Pricing = () => {
   //     console.log(error);
   //   },
   // });
-
-  // Generate features based on credits (you can customize this logic)
-  const generateFeatures = (credits: number) => [
-    { name: "Dashboard Access", included: true },
-    { name: "Customer Support", included: true },
-    { name: `${credits} requests`, included: credits > 0 },
-    { name: "High Resolution Downloads", included: credits >= 100 },
-    { name: "Priority Processing", included: credits >= 500 },
-    { name: "Commercial License", included: credits >= 1000 },
-  ];
 
   const logEvent = async () => {
     const params = await buildEventParams(`Purchase`, {
@@ -133,7 +131,7 @@ const Pricing = () => {
           {isLoading ? (
             // Loading skeletons
             <>
-              {[...Array(3)].map((_, i) => (
+              {[...Array(4)].map((_, i) => (
                 <div
                   key={i}
                   className="bg-white rounded-xl border border-gray-200 p-8"
@@ -152,7 +150,7 @@ const Pricing = () => {
             </>
           ) : error ? (
             // Error state
-            <div className="col-span-3 text-center py-12">
+            <div className="col-span-full text-center py-12">
               <p className="text-red-600 mb-4">Failed to load pricing plans</p>
               <button
                 onClick={() => window.location.reload()}
@@ -170,7 +168,7 @@ const Pricing = () => {
                 title={`${plan.plan}`}
                 description={plan.description}
                 price={plan.price}
-                features={generateFeatures(plan.credits)}
+                features={plan.features}
                 buttonText="Get started"
                 popular={plan.popular}
               />
@@ -180,89 +178,74 @@ const Pricing = () => {
       </div>
 
       {/* Individual Credit Purchase Section */}
-      <div className="bg-black py-16">
-        <div className="max-w-6xl mx-auto px-6">
-          <div className="bg-gradient-to-r from-gray-900 to-black rounded-2xl p-8 md:p-12 flex flex-col md:flex-row items-center justify-between gap-8">
-            {/* Left Content */}
-            <div className="flex-1">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center">
-                  <svg
-                    className="w-5 h-5 text-black"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                  >
-                    <path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.305 2.305 0 01-.567-.267C8.07 8.34 8 8.114 8 8c0-.114.07-.34.433-.582zM11 12.849v-1.698c.22.071.412.164.567.267.364.243.433.468.433.582 0 .114-.07.34-.433.582a2.305 2.305 0 01-.567.267z" />
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.535 4.535 0 00-1.676.662C6.602 6.234 6 7.009 6 8c0 .99.602 1.765 1.324 2.246.48.32 1.054.545 1.676.662v1.941c-.391-.127-.68-.317-.843-.504a1 1 0 10-1.51 1.31c.562.649 1.413 1.076 2.353 1.253V15a1 1 0 102 0v-.092a4.535 4.535 0 001.676-.662C13.398 13.766 14 12.991 14 12c0-.99-.602-1.765-1.324-2.246A4.535 4.535 0 0011 9.092V7.151c.391.127.68.317.843.504a1 1 0 101.511-1.31c-.563-.649-1.413-1.076-2.354-1.253V5z" clipRule="evenodd" />
-                  </svg>
-                </div>
-                <h3 className="text-2xl font-bold text-white">Individual</h3>
+      <div className="max-w-7xl mx-auto px-6 pb-16">
+        {isIndividualLoading ? (
+          <Skeleton height={300} />
+        ) : individualPlan ? (
+          <div className="bg-white rounded-xl border border-gray-200 p-8">
+            <div className="flex flex-col md:flex-row items-start justify-between gap-8">
+              {/* Left Content */}
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold text-black mb-6 capitalize">
+                  {individualPlan.name}
+                </h3>
+
+                <h2 className="text-2xl md:text-3xl font-bold text-black mb-6">
+                  {individualPlan.description}
+                </h2>
+
+                <ul className="space-y-3">
+                  {individualPlan.features.map((feature, index) => (
+                    <li key={index} className="flex items-center gap-3">
+                      <FiCheck className={`w-4 h-4 ${feature.included ? 'text-black' : 'text-gray-300'}`} />
+                      <span className={`text-sm ${feature.included ? 'text-black' : 'text-gray-400'}`}>
+                        {feature.name}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
               </div>
 
-              <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
-                Purchase a flexible amount of <br />
-                credits for your needs
-              </h2>
-
-              <ul className="space-y-3 text-white">
-                <li className="flex items-center gap-3">
-                  <FiCheck className="w-5 h-5 text-green-400" />
-                  <span>₦100 per credit</span>
-                </li>
-                <li className="flex items-center gap-3">
-                  <FiCheck className="w-5 h-5 text-green-400" />
-                  <span>No subscription required</span>
-                </li>
-                <li className="flex items-center gap-3">
-                  <FiCheck className="w-5 h-5 text-green-400" />
-                  <span>Credits never expire</span>
-                </li>
-                <li className="flex items-center gap-3">
-                  <FiCheck className="w-5 h-5 text-green-400" />
-                  <span className="font-medium">
-                    Buy exactly what you need
+              {/* Right Content - Pricing Input */}
+              <div className="bg-white rounded-xl border border-gray-200 p-6 min-w-[300px]">
+                <div className="flex items-center justify-between mb-4">
+                  <span className="bg-black text-white px-3 py-1 rounded-full text-sm font-medium">
+                    FLEXIBLE
                   </span>
-                </li>
-              </ul>
-            </div>
-
-            {/* Right Content - Pricing Card */}
-            <div className="bg-gray-800 rounded-xl p-6 min-w-[300px]">
-              <div className="flex items-center justify-between mb-4">
-                <span className="bg-white text-black px-3 py-1 rounded-full text-sm font-medium">
-                  FLEXIBLE
-                </span>
-                <span className="text-gray-400 text-sm">
-                  ₦100/credit
-                </span>
-              </div>
-
-              <div className="mb-6">
-                <div className="flex items-baseline gap-2 mb-2">
-                  <span className="text-4xl font-bold text-white">₦</span>
-                  <input
-                    type="number"
-                    placeholder="1000"
-                    className="text-4xl font-bold bg-transparent text-white border-none outline-none w-32"
-                    min="100"
-                    step="100"
-                  />
+                  <span className="text-gray-600 text-sm">
+                    ₦{(individualPlan.price_per_credit / 100).toLocaleString()}/credit
+                  </span>
                 </div>
-                <span className="text-gray-400 text-sm">Enter amount (minimum ₦100)</span>
-              </div>
 
-              <div className="text-sm text-gray-400 mb-6">
-                <p>• ₦100 = 1 credit</p>
-                <p>• Minimum purchase: ₦100 (1 credit)</p>
-                <p>• Credits never expire</p>
-              </div>
+                <div className="mb-6">
+                  <div className="flex items-baseline gap-2 mb-2">
+                    <span className="text-4xl font-bold text-black">₦</span>
+                    <input
+                      type="number"
+                      placeholder={(individualPlan.minimum_amount / 100).toString()}
+                      className="text-4xl font-bold bg-transparent text-black border-none outline-none w-32"
+                      min={individualPlan.minimum_amount / 100}
+                      step={individualPlan.price_per_credit / 100}
+                    />
+                  </div>
+                  <span className="text-gray-600 text-sm">
+                    Enter amount (minimum ₦{(individualPlan.minimum_amount / 100).toLocaleString()})
+                  </span>
+                </div>
 
-              <button className="w-full bg-white hover:bg-gray-100 text-black font-medium py-3 px-4 rounded-lg transition-colors">
-                Purchase Credits
-              </button>
+                <div className="text-sm text-gray-600 mb-6">
+                  <p>• ₦{(individualPlan.price_per_credit / 100).toLocaleString()} = 1 credit</p>
+                  <p>• Minimum purchase: ₦{(individualPlan.minimum_amount / 100).toLocaleString()} ({individualPlan.minimum_credits} credit{individualPlan.minimum_credits > 1 ? 's' : ''})</p>
+                  <p>• Credits never expire</p>
+                </div>
+
+                <button className="w-full bg-black hover:bg-gray-800 text-white font-medium py-3 px-4 rounded-lg transition-colors">
+                  Purchase Credits
+                </button>
+              </div>
             </div>
           </div>
-        </div>
+        ) : null}
       </div>
 
       {/* FAQ Section */}

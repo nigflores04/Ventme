@@ -50,3 +50,13 @@ export const getActiveSubscription = async () => {
   }
 };
 
+
+export const getIndividualPlan = async () => {
+  try {
+    const response = await axiosBaseInstance.get("/plans/individual");
+    return response.data;
+  } catch (error) {
+    handleApiError(error);
+    throw error;
+  }
+};
