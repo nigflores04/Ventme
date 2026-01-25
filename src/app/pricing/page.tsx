@@ -320,14 +320,6 @@ const Pricing = () => {
 
       {/* Footer */}
       <Footer />
-
-      <script
-        dangerouslySetInnerHTML={{
-          __html: `
-            fbq('track', 'ViewPricing');
-            `,
-        }}
-      />
     </div>
   );
 };
