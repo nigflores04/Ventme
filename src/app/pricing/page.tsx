@@ -17,15 +17,21 @@ import { useIpAddress } from "@/hooks/useIpAddress";
 import { trackEvent } from "@/api/analytics";
 
 const Pricing = () => {
+  // URL parameters for payment verification
   const params = useSearchParams();
   const reference = params.get("reference");
   const router = useRouter();
   const { user } = useSelector(selectUserState);
-  // console.log(reference);
-  const [billingCycle, setBillingCycle] = useState<"monthly" | "annual">(
-    "monthly"
-  );
+
+  // Billing cycle state (currently only monthly is implemented)
+  const [billingCycle, setBillingCycle] = useState<"monthly" | "annual">("monthly");
   const { ipAddress } = useIpAddress();
+
+  /**
+   * Fetch all subscription plans from API
+   * Plans include: Free, Starter, Basic, Studio
+   * Each plan has credits, price, description, popular flag, and features array
+   */
   const {
     data: plans,
     isLoading,
@@ -35,6 +41,11 @@ const Pricing = () => {
     queryFn: () => getSubscriptionsPlans(),
   });
 
+  /**
+   * Fetch Individual plan configuration from API
+   * Individual plan allows flexible credit purchases at ₦100 per credit
+   * Includes pricing, minimum amounts, and features
+   */
   const {
     data: individualPlan,
     isLoading: isIndividualLoading,
